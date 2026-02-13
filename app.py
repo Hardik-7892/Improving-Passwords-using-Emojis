@@ -249,3 +249,21 @@ if mode == "Login Test":
             st.success("Login Successful")
         else:
             st.error("Login Failed")
+
+st.divider()
+st.subheader("Researcher Controls")
+
+if st.button("Download Logs"):
+    try:
+        logs = pd.read_csv(LOG_FILE)
+        csv = logs.to_csv(index=False).encode("utf-8")
+
+        st.download_button(
+            label="Click to Download logs.csv",
+            data=csv,
+            file_name="logs.csv",
+            mime="text/csv"
+        )
+    except FileNotFoundError:
+        st.warning("No logs found yet.")
+
