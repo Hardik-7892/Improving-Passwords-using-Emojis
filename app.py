@@ -3,12 +3,39 @@ import hashlib
 import time
 import pandas as pd
 
-# Emoji mapping table (expandable)
-# EMOJI_MAP = {
-#     "😀": "E001", "😂": "E002", "🔥": "E003",
-#     "❤️": "E004", "😎": "E005", "👍": "E006",
-#     "🎉": "E007", "😢": "E008", "🚀": "E009"
-# }
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
+
+# Authorize
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+creds = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=scope
+)
+
+client = gspread.authorize(creds)
+
+# Open sheet
+sheet = client.open("streamlit_logs").sheet1
+
+# Example logging function
+def log_event(event, user="anonymous"):
+    sheet.append_row([
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        event,
+        user
+    ])
+
+# Example usage
+if st.button("Test Log"):
+    log_event("Button clicked", "student_user")
+    st.success("Logged to Google Sheets!")
+
 
 EMOJIS = ["😀","😂","🔥","❤️","😎","👍","🎉","😢","🚀","🥶","🤖","👀","💀","🌙","⭐","🍕"]
 
