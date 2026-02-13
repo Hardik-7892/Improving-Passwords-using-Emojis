@@ -4,11 +4,11 @@ import time
 import pandas as pd
 
 # Emoji mapping table (expandable)
-EMOJI_MAP = {
-    "😀": "E001", "😂": "E002", "🔥": "E003",
-    "❤️": "E004", "😎": "E005", "👍": "E006",
-    "🎉": "E007", "😢": "E008", "🚀": "E009"
-}
+# EMOJI_MAP = {
+#     "😀": "E001", "😂": "E002", "🔥": "E003",
+#     "❤️": "E004", "😎": "E005", "👍": "E006",
+#     "🎉": "E007", "😢": "E008", "🚀": "E009"
+# }
 
 EMOJIS = ["😀","😂","🔥","❤️","😎","👍","🎉","😢","🚀","🥶","🤖","👀","💀","🌙","⭐","🍕"]
 
@@ -18,10 +18,10 @@ LOG_FILE = "logs.csv"
 def encode_password(pw):
     encoded = ""
     for char in pw:
-        if char in EMOJI_MAP:
-            encoded += EMOJI_MAP[char]
-        else:
-            encoded += format(ord(char), "02x")
+        # if char in EMOJI_MAP:
+        #     encoded += EMOJI_MAP[char]
+        # else:
+        encoded += format(ord(char), "02x")
     return encoded
 
 # Hash password
