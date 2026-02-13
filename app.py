@@ -19,27 +19,11 @@ creds = Credentials.from_service_account_info(
 )
 
 client = gspread.authorize(creds)
-
-# Open sheet
 sheet = client.open("streamlit_logs").sheet1
-
-# Example logging function
-def log_event(event, user="anonymous"):
-    sheet.append_row([
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        event,
-        user
-    ])
-
-# Example usage
-if st.button("Test Log"):
-    log_event("Button clicked", "student_user")
-    st.success("Logged to Google Sheets!")
-
 
 EMOJIS = ["😀","😂","🔥","❤️","😎","👍","🎉","😢","🚀","🥶","🤖","👀","💀","🌙","⭐","🍕"]
 
-LOG_FILE = "logs.csv"
+# LOG_FILE = "logs.csv"
 
 # Encode password (text + emoji safe)
 def encode_password(pw):
@@ -57,13 +41,15 @@ def hash_password(encoded_pw):
 
 # Save logs
 def save_log(data):
-    df = pd.DataFrame([data])
-    try:
-        old = pd.read_csv(LOG_FILE)
-        df = pd.concat([old, df])
-    except:
-        pass
-    df.to_csv(LOG_FILE, index=False)
+    # df = pd.DataFrame([data])
+    # try:
+    #     old = pd.read_csv(LOG_FILE)
+    #     df = pd.concat([old, df])
+    # except:
+    #     pass
+    # df.to_csv(LOG_FILE, index=False)
+    row = list(data.values())
+    sheet.append_row(row)
 
 # App UI
 st.title("Emoji + Text Password Study Prototype")
@@ -244,7 +230,9 @@ if mode == "Login Test":
             st.stop()
 
         try:
-            logs = pd.read_csv(LOG_FILE)
+            records = sheet.get_all_records()
+            logs = pd.DataFrame(records)
+            # logs = pd.read_csv(LOG_FILE)
             filtered = logs[
                 (logs["user_id"].astype(str) == str(user_id)) &
                 (logs["type"] == pw_type) &
@@ -282,7 +270,9 @@ st.subheader("Researcher Controls")
 
 if st.button("Download Logs"):
     try:
-        logs = pd.read_csv(LOG_FILE)
+        records = sheet.get_all_records()
+        logs = pd.DataFrame(records)
+        # logs = pd.read_csv(LOG_FILE)
         csv = logs.to_csv(index=False).encode("utf-8")
 
         st.download_button(
