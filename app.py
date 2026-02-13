@@ -48,7 +48,16 @@ def save_log(data):
     # except:
     #     pass
     # df.to_csv(LOG_FILE, index=False)
-    row = list(data.values())
+    
+    # row = list(data.values())
+    # sheet.append_row(row)
+    headers = sheet.row_values(1)
+
+    # Build row aligned with headers
+    row = []
+    for col in headers:
+        row.append(data.get(col, ""))  # Fill missing fields with empty string
+
     sheet.append_row(row)
 
 # App UI
