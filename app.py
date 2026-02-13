@@ -45,6 +45,8 @@ mode = st.radio("Select Mode", ["Create Password", "Login Test"])
 # Initialize session state variables
 if "creation_start_time" not in st.session_state:
     st.session_state.creation_start_time = None
+if "login_start_time" not in st.session_state:
+    st.session_state.login_start_time = None
 if "password_input" not in st.session_state:
     st.session_state.password_input = ""
 if "last_pw_type" not in st.session_state:
@@ -152,15 +154,8 @@ if mode == "Login Test":
     user_id = st.text_input("Participant ID")
     pw_type = st.selectbox("Password Type", ["Text", "Emoji", "Hybrid"])
     
-    # password = st.text_input("Enter password", type="password")
-
-    # password = st.text_input(
-    #     "Password", 
-    #     value=st.session_state.password_input,
-    #     type="password"
-    # )
-
-        # Clear password if user switches mode
+    if st.session_state.login_start_time is None:
+        st.session_state.login_start_time = time.time()
 
     if "reset_password" not in st.session_state:
         st.session_state.reset_password = False
@@ -210,15 +205,25 @@ if mode == "Login Test":
             key="password_input",
             type="password"
         )
-
+    
     if st.button("Clear Password"):
         st.session_state.reset_password = True
         st.rerun()
 
     if st.button("Login"):
+        password = st.session_state.password_input
+        if not user_id or not password:
+            st.warning("Fill all fields")
+            st.stop()
+
         try:
             logs = pd.read_csv(LOG_FILE)
-            record = logs[(logs["user_id"] == user_id) & (logs["type"] == pw_type) & (logs["event"] == "created")].iloc[-1]
+            filtered = logs[
+                (logs["user_id"].astype(str) == str(user_id)) &
+                (logs["type"] == pw_type) &
+                (logs["event"] == "created")
+            ]
+            record = filtered.iloc[-1] if not filtered.empty else None
         except:
             st.error("No password found")
             st.stop()
@@ -226,7 +231,7 @@ if mode == "Login Test":
         encoded = encode_password(password)
         hashed = hash_password(encoded)
 
-        login_time = time.time() - st.session_state.creation_start_time
+        login_time = time.time() - st.session_state.login_start_time
 
         success = (hashed == record["hash"])
 
@@ -238,7 +243,7 @@ if mode == "Login Test":
             "login_time": login_time,
             "attempt_length": len(password)
         })
-        st.session_state.creation_start_time = None
+        st.session_state.login_start_time = None
 
         if success:
             st.success("Login Successful")
