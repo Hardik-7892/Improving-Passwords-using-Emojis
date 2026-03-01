@@ -171,26 +171,50 @@ if mode == "Create Password":
         if not user_id or not password:
             st.warning("Fill all fields")
         else:
-            
+            # --- DUPLICATE USER ID CHECK (for created event) ---
+            try:
+                records = sheet.get_all_records()
+            except Exception:
+                records = []
 
-            encoded = encode_password(password)
-            hashed = hash_password(encoded)
+            duplicate = False
+            for r in records:
+                # r is a dict like {"user_id": "...", "event": "...", ...}
+                if str(r.get("user_id", "")) == str(user_id) and r.get("event", "") == "created":
+                    duplicate = True
+                    break
 
-            creation_time = time.time() - st.session_state.creation_start_time
+            if duplicate:
+                save_log({
+                    "user_id": user_id,
+                    "type": pw_type,
+                    "category": st.session_state.get("category", ""),
+                    "event": "creation_failed",    # distinguish from "created"
+                    "reason": "duplicate_user_id", # optional extra column
+                    "password_length": len(password),
+                    "emoji_count": sum(1 for c in password if c in EMOJIS),
+                    "creation_time": time.time() - st.session_state.creation_start_time
+                })
+                st.error("This Participant ID already exists for a created password. Please use a different ID.")
+            else:
 
-            save_log({
-                "user_id": user_id,
-                "type": pw_type,
-                "category": st.session_state.get("category", ""),
-                "event": "created",
-                "password_length": len(password),
-                # "emoji_count": sum(1 for c in password if c in EMOJI_MAP),
-                "emoji_count": sum(1 for c in password if c in EMOJIS),
-                "creation_time": creation_time,
-                "hash": hashed
-            })
-            st.session_state.creation_start_time = None
-            st.success("Password Saved")
+                encoded = encode_password(password)
+                hashed = hash_password(encoded)
+
+                creation_time = time.time() - st.session_state.creation_start_time
+
+                save_log({
+                    "user_id": user_id,
+                    "type": pw_type,
+                    "category": st.session_state.get("category", ""),
+                    "event": "created",
+                    "password_length": len(password),
+                    "emoji_count": sum(1 for c in password if c in EMOJIS),
+                    "creation_time": creation_time,
+                    "hash": hashed
+                })
+                st.session_state.creation_start_time = None
+                st.success("Password Saved")
 
 # Login Mode
 if mode == "Login Test":
