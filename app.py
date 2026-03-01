@@ -23,15 +23,10 @@ sheet = client.open("streamlit_logs").sheet1
 
 EMOJIS = ["😀","😂","🔥","❤️","😎","👍","🎉","😢","🚀","🥶","🤖","👀","💀","🌙","⭐","🍕"]
 
-# LOG_FILE = "logs.csv"
-
 # Encode password (text + emoji safe)
 def encode_password(pw):
     encoded = ""
     for char in pw:
-        # if char in EMOJI_MAP:
-        #     encoded += EMOJI_MAP[char]
-        # else:
         encoded += format(ord(char), "02x")
     return encoded
 
@@ -41,16 +36,6 @@ def hash_password(encoded_pw):
 
 # Save logs
 def save_log(data):
-    # df = pd.DataFrame([data])
-    # try:
-    #     old = pd.read_csv(LOG_FILE)
-    #     df = pd.concat([old, df])
-    # except:
-    #     pass
-    # df.to_csv(LOG_FILE, index=False)
-    
-    # row = list(data.values())
-    # sheet.append_row(row)
     headers = sheet.row_values(1)
 
     # Build row aligned with headers
@@ -62,6 +47,36 @@ def save_log(data):
 
 # App UI
 st.title("Emoji + Text Password Study Prototype")
+
+# --- Category selection (A/B/C) ---
+
+if "category" not in st.session_state:
+    st.session_state.category = None
+
+category = st.selectbox(
+    "Select your category",
+    [
+        "A - Text + Emoji",
+        "B - Text + Hybrid",
+        "C - Text + Emoji + Hybrid",
+    ],
+    index=0 if st.session_state.category is None else
+           ["A - Text + Emoji", "B - Text + Hybrid", "C - Text + Emoji + Hybrid"].index(st.session_state.category),
+)
+
+st.session_state.category = category
+
+cat_code = category.split(" ")[0]  # "A", "B", or "C"
+
+st.info(f"You are in Category {cat_code}")
+
+if cat_code == "A":
+    allowed_pw_types = ["Text", "Emoji"]           # Text + Emoji only
+elif cat_code == "B":
+    allowed_pw_types = ["Text", "Hybrid"]          # Text + Hybrid only
+else:  # "C"
+    allowed_pw_types = ["Text", "Emoji", "Hybrid"] # All three
+
 mode = st.radio("Select Mode", ["Create Password", "Login Test"])
 
 # Initialize session state variables
@@ -76,11 +91,18 @@ if "last_pw_type" not in st.session_state:
 if "reset_password" not in st.session_state:
     st.session_state.reset_password = False
 
+if cat_code == "A":
+    st.write("In this condition, you will create Text and Emoji passwords.")
+elif cat_code == "B":
+    st.write("In this condition, you will create Text and Hybrid passwords.")
+else:
+    st.write("In this condition, you will create Text, Emoji, and Hybrid passwords.")
+
 if mode == "Create Password":
     st.subheader("Step 1 — Create Password")
 
     user_id = st.text_input("Participant ID")
-    pw_type = st.selectbox("Password Type", ["Text", "Emoji", "Hybrid"])
+    pw_type = st.selectbox("Password Type", allowed_pw_types, key="pw_type_" + mode)
     if st.session_state.creation_start_time is None:
         st.session_state.creation_start_time = time.time()
 
@@ -159,6 +181,7 @@ if mode == "Create Password":
             save_log({
                 "user_id": user_id,
                 "type": pw_type,
+                "category": st.session_state.get("category", ""),
                 "event": "created",
                 "password_length": len(password),
                 # "emoji_count": sum(1 for c in password if c in EMOJI_MAP),
@@ -174,7 +197,7 @@ if mode == "Login Test":
     st.subheader("Step 2 — Login")
 
     user_id = st.text_input("Participant ID")
-    pw_type = st.selectbox("Password Type", ["Text", "Emoji", "Hybrid"])
+    pw_type = st.selectbox("Password Type", allowed_pw_types, key="pw_type_" + mode)
     
     if st.session_state.login_start_time is None:
         st.session_state.login_start_time = time.time()
@@ -262,6 +285,7 @@ if mode == "Login Test":
         save_log({
             "user_id": user_id,
             "type": pw_type,
+            "category": st.session_state.get("category", ""),
             "event": "login",
             "success": success,
             "login_time": login_time,
