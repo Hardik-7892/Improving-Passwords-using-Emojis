@@ -180,7 +180,9 @@ if mode == "Create Password":
             duplicate = False
             for r in records:
                 # r is a dict like {"user_id": "...", "event": "...", ...}
-                if str(r.get("user_id", "")) == str(user_id) and r.get("event", "") == "created":
+                if (str(r.get("user_id", "")) == str(user_id) and 
+                    r.get("type", "") == pw_type and 
+                    r.get("event", "") == "created"):
                     duplicate = True
                     break
 
